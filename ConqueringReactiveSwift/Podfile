@@ -6,6 +6,7 @@ use_frameworks!
 
 target :ConqueringReactiveSwift do
 	pod 'ReactiveSwift', '~> 2.0'
+	
 end
 
 # Do not change the following. This is a workaround for FRAMEWORK_SEARCH_PATHS not containing ${inherited}.

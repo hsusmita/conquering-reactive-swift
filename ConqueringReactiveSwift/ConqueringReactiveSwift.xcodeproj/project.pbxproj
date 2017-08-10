@@ -25,6 +25,7 @@
 		7881B2921F3C391D00DE44D8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7881B2951F3C391D00DE44D8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		7881B2971F3C391D00DE44D8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7881B29D1F3C3B0A00DE44D8 /* Conquering-Reactive-Swift.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; name = "Conquering-Reactive-Swift.playground"; path = "Paygrounds/Conquering-Reactive-Swift.playground"; sourceTree = "<group>"; };
 		CEEE2F6C3E6F29D609EB9643 /* Pods-ConqueringReactiveSwift.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ConqueringReactiveSwift.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ConqueringReactiveSwift/Pods-ConqueringReactiveSwift.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -60,6 +61,7 @@
 		7881B27F1F3C391C00DE44D8 = {
 			isa = PBXGroup;
 			children = (
+				7881B29E1F3C3B3B00DE44D8 /* Playgrounds */,
 				7881B28A1F3C391D00DE44D8 /* ConqueringReactiveSwift */,
 				7881B2891F3C391D00DE44D8 /* Products */,
 				6A839D2D716320D4A08CA114 /* Pods */,
@@ -86,6 +88,14 @@
 				7881B2971F3C391D00DE44D8 /* Info.plist */,
 			);
 			path = ConqueringReactiveSwift;
+			sourceTree = "<group>";
+		};
+		7881B29E1F3C3B3B00DE44D8 /* Playgrounds */ = {
+			isa = PBXGroup;
+			children = (
+				7881B29D1F3C3B0A00DE44D8 /* Conquering-Reactive-Swift.playground */,
+			);
+			name = Playgrounds;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -387,6 +397,7 @@
 				7881B29C1F3C391D00DE44D8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
