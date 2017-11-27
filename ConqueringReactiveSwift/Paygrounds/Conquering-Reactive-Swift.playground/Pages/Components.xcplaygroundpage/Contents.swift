@@ -1,7 +1,11 @@
 //: [Previous](@previous)
+/*:
+## Conquering ReactiveSwift: Components
+### Part 2
+#### This sample code demonstrates usage of various primitives of ReactiveSwift. Here, the button becomes active when the character count of the entered text is greater than 10.
+*/
 
 import UIKit
-import Foundation
 import ReactiveSwift
 import Result
 import ReactiveCocoa
@@ -25,7 +29,7 @@ class SimulatorViewController: UIViewController {
 		//Defining source
 		let signal = textField.reactive.continuousTextValues
 		let transformedSignal = signal
-			.skipNil()
+			.map { text ?? ""}
 			.map { text in
 				text.characters.count > 10
 		}
@@ -40,7 +44,7 @@ class SimulatorViewController: UIViewController {
 		
 		textField.frame = CGRect(x: 20, y: 100, width: 335, height: 100)
 		button.frame = CGRect(x: 138, y: 300, width: 100, height: 50)
-		textField.backgroundColor = UIColor.gray
+		textField.backgroundColor = UIColor.gray.withAlphaComponent(0.2)
 		button.setTitle("Inactive", for: UIControlState.disabled)
 		button.setTitle("Active", for: UIControlState.normal)
 		button.isEnabled = false
@@ -59,3 +63,5 @@ currentView.backgroundColor = UIColor.white
 
 PlaygroundPage.current.liveView = currentView
 PlaygroundPage.current.needsIndefiniteExecution = true
+
+//: Next - [Conquering ReactiveSwift: Signal and Observer](@next)

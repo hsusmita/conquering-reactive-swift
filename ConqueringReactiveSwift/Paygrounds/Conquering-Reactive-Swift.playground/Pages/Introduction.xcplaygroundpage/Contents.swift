@@ -1,12 +1,7 @@
-
-//: [Previous](@previous)
-
 /*:
-
-## Sample Code
-
-### This sample code demonstrates reactive and non-reactive way of solving a problem. The following code simply assigns text to a UILabel of a UITextView as you type in.
-
+## Conquering ReactiveSwift: Introduction
+### Part 1
+#### This sample code demonstrates reactive and non-reactive way of solving a problem. The following code simply assigns text to a UILabel of a UITextView as you type in.
 */
 import UIKit
 import Foundation
@@ -67,5 +62,4 @@ viewController.configureNonReactively()
 PlaygroundPage.current.liveView = currentView
 PlaygroundPage.current.needsIndefiniteExecution = true
 
-
-//: [Next](@next)
+//: Next - [Conquering ReactiveSwift: Components](@next)
