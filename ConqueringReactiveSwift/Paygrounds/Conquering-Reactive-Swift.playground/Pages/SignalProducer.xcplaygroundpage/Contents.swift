@@ -1,7 +1,12 @@
-//: [Previous](@previous)
+//: [Conquering ReactiveSwift: Signal and Observer](@previous)
+
 /*:
 ## Conquering ReactiveSwift: SignalProducer
 ### Part 4
+
+**Goal:** Demonstrates how to create and start a `SignalProducer`.
+
+**Example:** Time elapsed is printed every 5 seconds, for next 50 seconds.
 */
 
 import UIKit
@@ -39,8 +44,15 @@ func startAndObserveSignalProducer() {
 
 	//Start SignalProducer
 	signalProducer.start(signalObserver)
-}
 
+	let signalProducerArray = urls.map { index in
+		return SignalProducer<UIImage, NoError> { (observer, lifetime) in
+			// Do your stuff
+		}
+	}
+	let finalSignalProducer = SignalProducer.combineLatest(signalProducerArray)
+
+}
 /*:
 ### lifetimeAwareSignalProducer
 ### This sample code demonstrates how to model a signalProducer to be aware of observer being disposed. Here, the time elapsed is printed every five seconds, for next 50 seconds.
@@ -182,14 +194,14 @@ func signalProducerWithSignal() {
 	signalProducer.start(signalObserver)
 }
 
-//startAndObserveSignalProducer()
+startAndObserveSignalProducer()
 //lifetimeAwareSignalProducer()
 //valueSignalProducer()
 //valueSequenceSignalProducer()
 //actionSignalProducer()
-signalProducerWithSignal()
+//signalProducerWithSignal()
 
 PlaygroundPage.current.needsIndefiniteExecution = true
 
-//: [Conquering ReactiveSwift: Disposable and Lifetime](@next)
+//: Next - [Conquering ReactiveSwift: Action](@next)
 

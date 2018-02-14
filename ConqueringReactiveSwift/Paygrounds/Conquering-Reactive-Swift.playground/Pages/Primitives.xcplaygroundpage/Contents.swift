@@ -1,8 +1,12 @@
-//: [Previous](@previous)
+//: [Conquering ReactiveSwift: Introduction](@previous)
+
 /*:
-## Conquering ReactiveSwift: Components
+## Conquering ReactiveSwift: Primitives
 ### Part 2
-#### This sample code demonstrates usage of various primitives of ReactiveSwift. Here, the button becomes active when the character count of the entered text is greater than 10.
+
+**Goal:** This sample code demonstrates usage of various primitives of ReactiveSwift.
+
+**Example:** The button becomes active when the character count of the entered text is greater than 10.
 */
 
 import UIKit
@@ -21,20 +25,21 @@ class SimulatorViewController: UIViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		configure()
-		//Defining consumer
+		// Defining consumer
 		let observer: Signal<Bool, NoError>.Observer = Signal<Bool, NoError>.Observer(value: { value in
 			self.button.isEnabled = value
 		})
-		
-		//Defining source
+
+		// Defining source
 		let signal = textField.reactive.continuousTextValues
 		let transformedSignal = signal
-			.map { text ?? ""}
 			.map { text in
+				text ?? ""
+			}.map { text in
 				text.characters.count > 10
 		}
 		
-		//Consuming signal
+		// Consuming signal
 		disposable = transformedSignal.observe(observer)
 	}
 	
@@ -51,7 +56,7 @@ class SimulatorViewController: UIViewController {
 	}
 	
 	func stopObserving() {
-		//Limit Scope
+		// Limit Scope
 		disposable?.dispose()
 	}
 }

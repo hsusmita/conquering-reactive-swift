@@ -15,6 +15,14 @@ class ViewController: UIViewController {
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		let x = Property(value: true)
+		let actionDisposable = AnyDisposable { 
+			print("is disposed")
+		}
+		let scopedDisposable = ScopedDisposable(actionDisposable)
+		let serialDisposable = SerialDisposable(actionDisposable)
+		serialDisposable.inner = AnyDisposable({})
+		serialDisposable.dispose()
 	}
 
 	override func didReceiveMemoryWarning() {

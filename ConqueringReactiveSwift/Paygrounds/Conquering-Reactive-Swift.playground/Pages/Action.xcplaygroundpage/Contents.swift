@@ -1,4 +1,13 @@
-//: [Previous](@previous)
+//: [Conquering ReactiveSwift: SignalProducer](@previous)
+
+/*:
+## Conquering ReactiveSwift: Action
+### Part 5
+
+**Goal:** Demonstrates how to create and apply an `Action`.
+
+**Example:** Time elapsed is printed every N seconds, for next N * 10 seconds.
+*/
 
 import UIKit
 import Foundation
@@ -9,52 +18,46 @@ import XCPlayground
 import PlaygroundSupport
 PlaygroundPage.current.needsIndefiniteExecution = true
 
-let signalProducer = SignalProducer<Int, NoError> { (observer, lifetime) in
-	for i in 1...10 {
-		DispatchQueue.main.asyncAfter(deadline: .now() + 1.0 * Double(i)) {
-			observer.send(value: i)
-		}
-	}
-	DispatchQueue.main.asyncAfter(deadline: .now() + 11.0) {
-		observer.sendCompleted()
-	}
-}
-
-//signalProducer.startWithValues { value in
-//	print("observing first")
-//	print(value)
-//}
-//
-//signalProducer.startWithValues { value in
-//	print("observing second")
-//	print(value)
-//}
-func getSignalProducer(value: Int) -> SignalProducer<Int, NoError> {
-	return SignalProducer<Int, NoError> { (observer, lifetime) in
-		print("input = \(value)")
-		for i in 1...10 {
-			DispatchQueue.main.asyncAfter(deadline: .now() + 1.0 * Double(i)) {
-				observer.send(value: i * value)
+//: ### Returns a SignalProducer which emits interger after interval seconds
+	func getSignalProducer(interval: Int) -> SignalProducer<Int, NoError> {
+		let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
+			for i in 0..<10 {
+				DispatchQueue.main.asyncAfter(deadline: .now() + Double(interval *  i)) {
+					guard !lifetime.hasEnded else {
+						observer.sendInterrupted()
+						return
+					}
+					observer.send(value: i)
+					if i == 9 {
+						observer.sendCompleted()
+					}
+				}
 			}
 		}
-		DispatchQueue.main.asyncAfter(deadline: .now() + 11.0) {
-			observer.sendCompleted()
-		}
+		return signalProducer
 	}
-}
 
-let action = Action<(Int), Int, NoError>(execute: getSignalProducer)
+//: ### Define an action with a closure
+	let action = Action<(Int), Int, NoError>(execute: getSignalProducer)
 
-action.values.observeValues { value in
-	print(value)
-}
-action.apply(2).start()
-action.apply(1).start() //Ignored as action was busy executing
-action.completed.observeValues {
-	print("action completed")
-}
-DispatchQueue.main.asyncAfter(deadline: .now() + 12.0) {
-	action.apply(3).start()
-}
+//: ### Observe values received
+	action.values.observeValues { value in
+		print("Time elapsed = \(value)")
+	}
 
-//: [Next](@next)
+//: ### Observe when action completes
+	action.completed.observeValues {
+		print("Action completed")
+	}
+
+//: ### Apply the action with inputs and start it
+	action.apply(1).start()
+	action.apply(2).start() //Ignored as action was busy executing
+
+	DispatchQueue.main.asyncAfter(deadline: .now() + 12.0) {
+		//Will be executed as it is started after `action.apply(1)` completed
+		action.apply(3).start()
+	}
+
+//: Next - [Conquering ReactiveSwift: Disposable and Lifetime](@next)
+
