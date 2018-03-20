@@ -21,12 +21,15 @@ import PlaygroundSupport
 ### This sample code demonstrates how to create and start observing a signal producer. Here, the time elapsed is printed every five seconds, for next 50 seconds.
 */
 func startAndObserveSignalProducer() {
+
 	//Create a SignalProducer
 	let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
-		for i in 0..<10 {
-			DispatchQueue.main.asyncAfter(deadline: .now() + 5.0 *  Double(i)) {
-				observer.send(value: i)
-				if i == 9 {
+		let now = DispatchTime.now()
+		for index in 0..<10 {
+			let timeElapsed = index * 5
+			DispatchQueue.main.asyncAfter(deadline: now + Double(timeElapsed)) {
+				observer.send(value: index)
+				if index == 9 {
 					observer.sendCompleted()
 				}
 			}
@@ -45,13 +48,6 @@ func startAndObserveSignalProducer() {
 	//Start SignalProducer
 	signalProducer.start(signalObserver)
 
-	let signalProducerArray = urls.map { index in
-		return SignalProducer<UIImage, NoError> { (observer, lifetime) in
-			// Do your stuff
-		}
-	}
-	let finalSignalProducer = SignalProducer.combineLatest(signalProducerArray)
-
 }
 /*:
 ### lifetimeAwareSignalProducer
@@ -60,16 +56,18 @@ func startAndObserveSignalProducer() {
 func lifetimeAwareSignalProducer() {
 	//Create a SignalProducer
 	let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
-		for i in 0..<10 {
-			DispatchQueue.main.asyncAfter(deadline: .now() + 5.0 *  Double(i)) {
+		let now = DispatchTime.now()
+		for index in 0..<10 {
+			let timeElapsed = index * 5
+			DispatchQueue.main.asyncAfter(deadline: now + Double(timeElapsed)) {
 				//If the following the code is omitted, the statement `Execute complex task` is printed even after the observer has been disposed.
 				guard !lifetime.hasEnded else {
 					observer.sendInterrupted()
 					return
 				}
 				print("Execute complex task")
-				observer.send(value: i)
-				if i == 9 {
+				observer.send(value: timeElapsed)
+				if index == 9 {
 					observer.sendCompleted()
 				}
 			}
@@ -92,6 +90,7 @@ func lifetimeAwareSignalProducer() {
 	DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
 		disposable.dispose()
 	}
+
 }
 
 /*:
@@ -194,8 +193,8 @@ func signalProducerWithSignal() {
 	signalProducer.start(signalObserver)
 }
 
-startAndObserveSignalProducer()
-//lifetimeAwareSignalProducer()
+//startAndObserveSignalProducer()
+lifetimeAwareSignalProducer()
 //valueSignalProducer()
 //valueSequenceSignalProducer()
 //actionSignalProducer()
@@ -204,4 +203,38 @@ startAndObserveSignalProducer()
 PlaygroundPage.current.needsIndefiniteExecution = true
 
 //: Next - [Conquering ReactiveSwift: Action](@next)
+
+let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
+	let now = DispatchTime.now()
+	for index in 0..<10 {
+		let timeElapsed = index * 5
+		DispatchQueue.main.asyncAfter(deadline: now + Double(timeElapsed)) {
+			guard !lifetime.hasEnded else {
+				observer.sendInterrupted()
+				return
+			}
+			observer.send(value: timeElapsed)
+			if index == 9 {
+				observer.sendCompleted()
+			}
+		}
+	}
+}
+
+let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
+	let now = DispatchTime.now()
+	for index in 0..<10 {
+		let timeElapsed = index * 5
+		DispatchQueue.main.asyncAfter(deadline: now + Double(timeElapsed)) {
+			guard !lifetime.hasEnded else {
+				observer.sendInterrupted()
+				return
+			}
+			observer.send(value: timeElapsed)
+			if index == 9 {
+				observer.sendCompleted()
+			}
+		}
+	}
+}
 
