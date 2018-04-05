@@ -18,10 +18,147 @@ import XCPlayground
 import PlaygroundSupport
 PlaygroundPage.current.needsIndefiniteExecution = true
 
-//: ### Returns a SignalProducer which emits interger after interval seconds
+func generateSignalProducer() {
+	let signalProducerGenerator: (Int) -> SignalProducer<Int, NoError>  = { timeInterval in
+		return SignalProducer<Int, NoError> { (observer, lifetime) in
+			let now = DispatchTime.now()
+			for index in 0..<10 {
+				let timeElapsed = index * timeInterval
+				DispatchQueue.main.asyncAfter(deadline: now + Double(timeElapsed)) {
+					guard !lifetime.hasEnded else {
+						observer.sendInterrupted()
+						return
+					}
+					observer.send(value: timeElapsed)
+					if index == 9 {
+						observer.sendCompleted()
+					}
+				}
+			}
+		}
+	}
+
+	let signalProducer1 = signalProducerGenerator(1)
+	let signalProducer2 = signalProducerGenerator(2)
+
+	signalProducer1.startWithValues { value in
+		print("value from signalProducer1 = \(value)")
+	}
+
+	signalProducer2.startWithValues { value in
+		print("value from signalProducer2 = \(value)")
+	}
+}
+
+func basicAction() {
+	//: ### Returns a SignalProducer which emits interger after interval seconds
+	let signalProducerGenerator: (Int) -> SignalProducer<Int, NoError>  = { timeInterval in
+		return SignalProducer<Int, NoError> { (observer, lifetime) in
+			let now = DispatchTime.now()
+			for index in 0..<10 {
+				let timeElapsed = index * timeInterval
+				DispatchQueue.main.asyncAfter(deadline: now + Double(timeElapsed)) {
+					guard !lifetime.hasEnded else {
+						observer.sendInterrupted()
+						return
+					}
+					observer.send(value: timeElapsed)
+					if index == 9 {
+						observer.sendCompleted()
+					}
+				}
+			}
+		}
+	}
+
+	//: ### Define an action with a closure
+	let action = Action<(Int), Int, NoError>(execute: signalProducerGenerator)
+
+	//: ### Observe values received
+	action.values.observeValues { value in
+		print("Time elapsed = \(value)")
+	}
+
+	//: ### Observe when action completes
+	action.values.observeCompleted {
+		print("Action completed")
+	}
+
+	//: ### Apply the action with inputs and start it
+	action.apply(1).start()
+	action.apply(2).start() //Ignored as action was busy executing
+	DispatchQueue.main.asyncAfter(deadline: .now() + 12.0) {
+		//Will be executed as it is started after `action.apply(1)` completed
+		action.apply(3).start()
+	}
+}
+
+func textSignalGenerator(text: String) -> Signal<String, NoError> {
+    return Signal<String, NoError> { (observer, _) in
+        let now = DispatchTime.now()
+        for index in 0..<text.count {
+            DispatchQueue.main.asyncAfter(deadline: now + 1.0 * Double(index)) {
+                let indexStartOfText = text.index(text.startIndex, offsetBy: 0)
+                let indexEndOfText = text.index(text.startIndex, offsetBy: index)
+                let substring = text[indexStartOfText...indexEndOfText]
+                let value = String(substring)
+                observer.send(value: value)
+            }
+        }
+    }
+}
+
+func lengthCheckerSignalProducer(text: String, minimumLength: Int) ->  SignalProducer<Bool, NoError> {
+    return SignalProducer<Bool, NoError> { (observer, _) in
+        observer.send(value: (text.count > minimumLength))
+        observer.sendCompleted()
+    }
+}
+
+func actionWithState() {
+	let title = "ReactiveSwift"    
+	let titleSignal = textSignalGenerator(text: title)
+	let titleProperty = Property(initial: "", then: titleSignal)
+    
+    let titleLengthChecker = Action<Int, Bool, NoError>(
+        state: titleProperty, 
+        execute: lengthCheckerSignalProducer)
+
+	titleLengthChecker.values.observeValues { isValid in
+		print("is title valid = \(isValid)")
+	}
+
+	for i in 0..<title.count {
+		DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Double(i)) {
+			titleLengthChecker.apply(10).start()
+		}
+	}
+}
+
+func conditionallyEnabledAction() {
+    let title = "ReactiveSwift"    
+    let titleSignal = textSignalGenerator(text: title)
+    let titleProperty = Property(initial: "", then: titleSignal)
+    
+    let titleLengthChecker = Action<Int, Bool, NoError>(
+        state: titleProperty, 
+        enabledIf: { $0.count > 5 },
+        execute: lengthCheckerSignalProducer
+    )
+    
+    titleLengthChecker.values.observeValues { isValid in
+        print("is title valid = \(isValid)")
+    }
+    
+    for i in 0..<title.count {
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Double(i)) {
+            titleLengthChecker.apply(10).start()
+        }
+    }
+}
+/*//: ### Returns a SignalProducer which emits interger after interval seconds
 	func getSignalProducer(value: Int) -> SignalProducer<Int, NoError> {
 		return SignalProducer<Int, NoError> { (observer, lifetime) in
-//			print("start")
 			for i in 0..<10 {
 				DispatchQueue.main.asyncAfter(deadline: .now() + Double(value *  i)) {
 					guard !lifetime.hasEnded else {
@@ -51,84 +188,17 @@ PlaygroundPage.current.needsIndefiniteExecution = true
 	}
 
 //: ### Apply the action with inputs and start it
-//	action.apply(1).start()
-//	action.apply(2).start() //Ignored as action was busy executing
-//
-//	DispatchQueue.main.asyncAfter(deadline: .now() + 12.0) {
-//		//Will be executed as it is started after `action.apply(1)` completed
-//		action.apply(3).start()
-//	}
-
-//: ### Define an action with condition
-     let property1 = Property<Bool>(
-		initial: true,
-		then: SignalProducer<Bool, NoError>({ (observer, lifetime) in
-//			print("Start")
-			DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-//				print("sent")
-				observer.send(value: false)
-				observer.sendCompleted()
-			}
-		})
-	)
-	let property2 = Property<Int>(
-		initial: 1,
-		then: SignalProducer<Int, NoError>({ (observer, lifetime) in
-//			print("Start")
-			let now = DispatchTime.now()
-			for i in 0..<10 {
-				DispatchQueue.main.asyncAfter(deadline: .now() + Double(i * 2)) {
-					//				print("sent")
-					observer.send(value: i)
-//					observer.sendCompleted()
-				}
-			}
-
-		})
-	)
-    let conditionalAction = Action<(Int), Int, NoError>(execute: getSignalProducer)
-//	conditionalAction.apply(1).start()
-
-//let conditionalAction = Action<(Int), Int, NoError>(state: property1, enabledIf: { val in
-//	return value == true
-//
-//}, execute: getSignalProducer)
-//	conditionalAction.apply(2).start() //Will be executed
-
-//
-//	conditionalAction.values.observeValues { value in
-//		print("Time elapsed = \(value)")
-//	}
-
-let action1 = Action<(Int), Int, NoError>(state: property2) { (value, timeInterval) -> SignalProducer<Int, NoError> in
-	print("start")
-	return SignalProducer<Int, NoError> { (observer, lifetime) in
-		let now = DispatchTime.now()
-		for i in 0..<10 {
-			DispatchQueue.main.asyncAfter(deadline: now + Double(timeInterval * i)) {
-				guard !lifetime.hasEnded else {
-					observer.sendInterrupted()
-					return
-				}
-				observer.send(value: value * i)
-				if i == 9 {
-					observer.sendCompleted()
-				}
-			}
-		}
+	action.apply(1).start()
+	action.apply(2).start() //Ignored as action was busy executing
+	DispatchQueue.main.asyncAfter(deadline: .now() + 12.0) {
+		//Will be executed as it is started after `action.apply(1)` completed
+		action.apply(3).start()
 	}
-}
+*/
 
-action1.values.observeValues { value in
-	print("action1: current value = \(value)")
-}
-
-property2.signal.observeValues { value in
-	print("property value = \(value)")
-
-}
-DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-	action1.apply(1).start()
-}
+//generateSignalProducer()
+//basicAction()
+//actionWithState()
+conditionallyEnabledAction()
 //: Next - [Conquering ReactiveSwift: Disposable and Lifetime](@next)
 
