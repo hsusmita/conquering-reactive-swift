@@ -6,9 +6,7 @@
 import UIKit
 import Foundation
 import ReactiveSwift
-import Result
 import ReactiveCocoa
-import XCPlayground
 import PlaygroundSupport
 
 class SimulatorViewController: UIViewController {
