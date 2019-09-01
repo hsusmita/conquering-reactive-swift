@@ -1,13 +1,44 @@
-import Result
+extension Result: SignalProducerConvertible {
+	public var producer: SignalProducer<Success, Failure> {
+		return .init(result: self)
+	}
+	
+	public var value: Success? {
+		switch self {
+		case let .success(value): return value
+		case .failure: return nil
+		}
+	}
+	
+	public var error: Failure? {
+		switch self {
+		case .success: return nil
+		case let .failure(error): return error
+		}
+	}
+}
 
-/// Private alias of the free `materialize()` from `Result`.
-///
-/// This exists because within a `Signal` or `SignalProducer` operator,
-/// `materialize()` refers to the operator with that name.
-/// Namespacing as `Result.materialize()` doesn't work either,
-/// because it tries to resolve a static member on the _type_
-/// `Result`, rather than the free function in the _module_
-/// of the same name.
-internal func materialize<T>(_ f: () throws -> T) -> Result<T, AnyError> {
-	return materialize(try f())
+/// A protocol that can be used to constrain associated types as `Result`.
+public protocol ResultProtocol {
+	associatedtype Success
+	associatedtype Failure: Swift.Error
+	
+	init(success: Success)
+	init(failure: Failure)
+	
+	var result: Result<Success, Failure> { get }
+}
+
+extension Result: ResultProtocol {
+	public init(success: Success) {
+		self = .success(success)
+	}
+	
+	public init(failure: Failure) {
+		self = .failure(failure)
+	}
+	
+	public var result: Result<Success, Failure> {
+		return self
+	}
 }

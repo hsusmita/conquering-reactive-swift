@@ -10,7 +10,8 @@
 #endif
 #endif
 
+#import "ObjCRuntimeAliases.h"
 
-FOUNDATION_EXPORT double ResultVersionNumber;
-FOUNDATION_EXPORT const unsigned char ResultVersionString[];
+FOUNDATION_EXPORT double ReactiveCocoaVersionNumber;
+FOUNDATION_EXPORT const unsigned char ReactiveCocoaVersionString[];
 

@@ -1,5 +1,3 @@
-import Result
-
 /// A mutable property that validates mutations before committing them.
 ///
 /// If the property wraps an arbitrary mutable property, changes originated from
@@ -37,11 +35,11 @@ public final class ValidatingProperty<Value, ValidationError: Swift.Error>: Muta
 	/// A producer for Signals that will send the property's current value,
 	/// followed by all changes over time, then complete when the property has
 	/// deinitialized.
-	public let producer: SignalProducer<Value, NoError>
+	public let producer: SignalProducer<Value, Never>
 
 	/// A signal that will send the property's changes over time,
 	/// then complete when the property has deinitialized.
-	public let signal: Signal<Value, NoError>
+	public let signal: Signal<Value, Never>
 
 	/// The lifetime of the property.
 	public let lifetime: Lifetime
@@ -177,32 +175,14 @@ public final class ValidatingProperty<Value, ValidationError: Swift.Error>: Muta
 	) {
 		self.init(MutableProperty(initial), with: other, validator)
 	}
-
-	/// Create a `ValidatingProperty` that presents a mutable validating
-	/// view for an inner mutable property.
+	
+	/// Create a `ValidatingProperty` which validates mutations before
+	/// committing them.
 	///
 	/// The proposed value is only committed when `valid` is returned by the
 	/// `validator` closure.
 	///
 	/// - note: `inner` is retained by the created property.
-	///
-	/// - parameters:
-	///   - inner: The inner property which validated values are committed to.
-	///   - other: The property that `validator` depends on.
-	///   - validator: The closure to invoke for any proposed value to `self`.
-	public convenience init<U, E>(
-		_ inner: MutableProperty<Value>,
-		with other: ValidatingProperty<U, E>,
-		_ validator: @escaping (Value, U) -> Decision
-	) {
-		self.init(inner, with: other, validator)
-	}
-
-	/// Create a `ValidatingProperty` that validates mutations before
-	/// committing them.
-	///
-	/// The proposed value is only committed when `valid` is returned by the
-	/// `validator` closure.
 	///
 	/// - parameters:
 	///   - initial: The initial value of the property. It is not required to
@@ -214,10 +194,28 @@ public final class ValidatingProperty<Value, ValidationError: Swift.Error>: Muta
 		with other: ValidatingProperty<U, E>,
 		_ validator: @escaping (Value, U) -> Decision
 	) {
+		self.init(MutableProperty(initial), with: other, validator)
+	}
+
+	/// Create a `ValidatingProperty` that presents a mutable validating
+	/// view for an inner mutable property.
+	///
+	/// The proposed value is only committed when `valid` is returned by the
+	/// `validator` closure.
+	///
+	/// - parameters:
+	///   - inner: The inner property which validated values are committed to.
+	///   - other: The property that `validator` depends on.
+	///   - validator: The closure to invoke for any proposed value to `self`.
+	public convenience init<U, E>(
+		_ inner: MutableProperty<Value>,
+		with other: ValidatingProperty<U, E>,
+		_ validator: @escaping (Value, U) -> Decision
+	) {
 		// Capture only `other.result` but not `other`.
 		let otherValidations = other.result
 
-		self.init(initial) { input in
+		self.init(inner) { input in
 			let otherValue: U
 
 			switch otherValidations.value {

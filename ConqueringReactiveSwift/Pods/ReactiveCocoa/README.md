@@ -78,7 +78,7 @@ __ReactiveCocoa__ wraps various aspects of Cocoa frameworks with the declarative
 	// subsequent changes.
 	//
 	// Terminate the KVO observation if the lifetime of `self` ends.
-	let producer = object.reactive.values(forKeyPath: #keyPath(key))
+	let producer = object.reactive.producer(forKeyPath: #keyPath(key))
 		.take(during: self.reactive.lifetime)
 
 	// A parameterized property that represents the supplied key path of the
@@ -100,10 +100,10 @@ If you use [Carthage][] to manage your dependencies, simply add
 ReactiveCocoa to your `Cartfile`:
 
 ```
-github "ReactiveCocoa/ReactiveCocoa" ~> 7.0
+github "ReactiveCocoa/ReactiveCocoa" ~> 9.0
 ```
 
-If you use Carthage to build your dependencies, make sure you have added `ReactiveCocoa.framework`, `ReactiveSwift.framework`, and `Result.framework` to the "_Linked Frameworks and Libraries_" section of your target, and have included them in your Carthage framework copying build phase.
+If you use Carthage to build your dependencies, make sure you have added `ReactiveCocoa.framework` and `ReactiveSwift.framework` to the "_Linked Frameworks and Libraries_" section of your target, and have included them in your Carthage framework copying build phase.
 
 #### CocoaPods
 
@@ -111,7 +111,7 @@ If you use [CocoaPods][] to manage your dependencies, simply add
 ReactiveCocoa to your `Podfile`:
 
 ```
-pod 'ReactiveCocoa', '~> 7.0'
+pod 'ReactiveCocoa', '~> 9.0'
 ```
 
 #### Git submodule
@@ -119,13 +119,10 @@ pod 'ReactiveCocoa', '~> 7.0'
  1. Add the ReactiveCocoa repository as a [submodule][] of your
     application’s repository.
  1. Run `git submodule update --init --recursive` from within the ReactiveCocoa folder.
- 1. Drag and drop `ReactiveCocoa.xcodeproj`,
-    `Carthage/Checkouts/ReactiveSwift/ReactiveSwift.xcodeproj`, and
-    `Carthage/Checkouts/Result/Result.xcodeproj` into your application’s Xcode
+ 1. Drag and drop `ReactiveCocoa.xcodeproj` and `Carthage/Checkouts/ReactiveSwift/ReactiveSwift.xcodeproj` into your application’s Xcode
     project or workspace.
  1. On the “General” tab of your application target’s settings, add
-    `ReactiveCocoa.framework`, `ReactiveSwift.framework`, and `Result.framework`
-    to the “Embedded Binaries” section.
+    `ReactiveCocoa.framework` and `ReactiveSwift.framework` to the “Embedded Binaries” section.
  1. If your application target does not contain Swift code at all, you should also
     set the `EMBEDDED_CONTENT_CONTAINS_SWIFT` build setting to “Yes”.
 

@@ -11,7 +11,6 @@
 
 import UIKit
 import ReactiveSwift
-import Result
 import ReactiveCocoa
 import XCPlayground
 import PlaygroundSupport
@@ -23,7 +22,7 @@ import PlaygroundSupport
 func startAndObserveSignalProducer() {
 
 	//Create a SignalProducer
-	let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
+	let signalProducer: SignalProducer<Int, Never> = SignalProducer { (observer, lifetime) in
 		let now = DispatchTime.now()
 		for index in 0..<10 {
 			let timeElapsed = index * 5
@@ -37,7 +36,7 @@ func startAndObserveSignalProducer() {
 	}
 
 	//Create an observer
-	let signalObserver = Signal<Int, NoError>.Observer (value: { value in
+	let signalObserver = Signal<Int, Never>.Observer (value: { value in
 		print("Time elapsed = \(value)")
 	}, completed: {
 		print("completed")
@@ -55,7 +54,7 @@ func startAndObserveSignalProducer() {
 */
 func lifetimeAwareSignalProducer() {
 	//Create a SignalProducer
-	let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
+	let signalProducer: SignalProducer<Int, Never> = SignalProducer { (observer, lifetime) in
 		let now = DispatchTime.now()
 		for index in 0..<10 {
 			let timeElapsed = index * 5
@@ -75,7 +74,7 @@ func lifetimeAwareSignalProducer() {
 	}
 
 	//Create an observer
-	let signalObserver = Signal<Int, NoError>.Observer (value: { value in
+	let signalObserver = Signal<Int, Never>.Observer (value: { value in
 		print("Time elapsed = \(value)")
 	}, completed: {
 		print("completed")
@@ -98,10 +97,10 @@ func lifetimeAwareSignalProducer() {
 ### This sample code demonstrates how create a signalProducer with emits just one value and then completes.
 */
 func valueSignalProducer() {
-	let signalProducer: SignalProducer<Int, NoError> = SignalProducer(value: 1)
+	let signalProducer: SignalProducer<Int, Never> = SignalProducer(value: 1)
 
 	//Create an observer
-	let signalObserver = Signal<Int, NoError>.Observer (value: { value in
+	let signalObserver = Signal<Int, Never>.Observer (value: { value in
 		print("value received = \(value)")
 	}, completed: {
 		print("completed")
@@ -118,10 +117,10 @@ func valueSignalProducer() {
 ### This sample code demonstrates how create a signalProducer with emits sequence of values and then completes.
 */
 func valueSequenceSignalProducer() {
-	let signalProducer: SignalProducer<Int, NoError> = SignalProducer([1, 2, 3, 4, 5])
+	let signalProducer: SignalProducer<Int, Never> = SignalProducer([1, 2, 3, 4, 5])
 	//let signalProducer = SignalProducer(values: 1, 2, 3, 4, 5)
 	//Create an observer
-	let signalObserver = Signal<Int, NoError>.Observer (value: { value in
+	let signalObserver = Signal<Int, Never>.Observer (value: { value in
 		print("value received = \(value)")
 	}, completed: {
 		print("completed")
@@ -144,10 +143,10 @@ func actionSignalProducer() {
 		return Int(randomNumber)
 	}
 
-	let signalProducer: SignalProducer<Int, NoError> = SignalProducer(action)
+	let signalProducer: SignalProducer<Int, Never> = SignalProducer(action)
 
 	//Create an observer
-	let signalObserver = Signal<Int, NoError>.Observer (value: { value in
+	let signalObserver = Signal<Int, Never>.Observer (value: { value in
 		print("value received = \(value)")
 	}, completed: {
 		print("completed")
@@ -165,7 +164,7 @@ func actionSignalProducer() {
 */
 func signalProducerWithSignal() {
 	//Create a signal
-	let (output, input) = Signal<Int, NoError>.pipe()
+	let (output, input) = Signal<Int, Never>.pipe()
 
 	//Send value to signal
 	for i in 0..<10 {
@@ -181,7 +180,7 @@ func signalProducerWithSignal() {
 	let signalProducer = SignalProducer(output)
 
 	//Create an observer
-	let signalObserver = Signal<Int, NoError>.Observer (value: { value in
+	let signalObserver = Signal<Int, Never>.Observer (value: { value in
 		print("value received = \(value)")
 	}, completed: {
 		print("completed")
@@ -204,7 +203,7 @@ PlaygroundPage.current.needsIndefiniteExecution = true
 
 //: Next - [Conquering ReactiveSwift: Action](@next)
 
-let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
+let signalProducer: SignalProducer<Int, Never> = SignalProducer { (observer, lifetime) in
 	let now = DispatchTime.now()
 	for index in 0..<10 {
 		let timeElapsed = index * 5
@@ -221,20 +220,20 @@ let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, l
 	}
 }
 
-let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
-	let now = DispatchTime.now()
-	for index in 0..<10 {
-		let timeElapsed = index * 5
-		DispatchQueue.main.asyncAfter(deadline: now + Double(timeElapsed)) {
-			guard !lifetime.hasEnded else {
-				observer.sendInterrupted()
-				return
-			}
-			observer.send(value: timeElapsed)
-			if index == 9 {
-				observer.sendCompleted()
-			}
-		}
-	}
-}
+//let signalProducer: SignalProducer<Int, Never> = SignalProducer { (observer, lifetime) in
+//    let now = DispatchTime.now()
+//    for index in 0..<10 {
+//        let timeElapsed = index * 5
+//        DispatchQueue.main.asyncAfter(deadline: now + Double(timeElapsed)) {
+//            guard !lifetime.hasEnded else {
+//                observer.sendInterrupted()
+//                return
+//            }
+//            observer.send(value: timeElapsed)
+//            if index == 9 {
+//                observer.sendCompleted()
+//            }
+//        }
+//    }
+//}
 

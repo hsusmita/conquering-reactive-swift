@@ -2,7 +2,6 @@
 
 import UIKit
 import ReactiveSwift
-import Result
 import ReactiveCocoa
 import XCPlayground
 import PlaygroundSupport
@@ -12,7 +11,7 @@ import PlaygroundSupport
 ### lifetimeAwareSignalProducer
 ### This sample code demonstrates how to model a signalProducer to be aware of observer being disposed. Here, the time elapsed is printed every five seconds, for next 50 seconds.
 */
-func timerSignalProducer() -> SignalProducer<Int, NoError> {
+func timerSignalProducer() -> SignalProducer<Int, Never> {
 	return SignalProducer { (observer, lifetime) in
 		for i in 0..<10 {
 			DispatchQueue.main.asyncAfter(deadline: .now() + 5.0 *  Double(i)) {
@@ -49,8 +48,8 @@ class ScopedDisposableExample {
 }
 
 class CompositeDisposableExample {
-	let oddSignalProducer = SignalProducer<Int, NoError>([1, 3, 5, 7, 9])
-	let evenSignalProducer = SignalProducer<Int, NoError>([0, 2, 4, 6, 8])
+	let oddSignalProducer = SignalProducer<Int, Never>([1, 3, 5, 7, 9])
+	let evenSignalProducer = SignalProducer<Int, Never>([0, 2, 4, 6, 8])
 
 	var compositeDisposable = CompositeDisposable()
 
@@ -162,3 +161,21 @@ class OtherClass {
 
 var otherClass: OtherClass? = OtherClass()*/
 //: [Next](@next)
+
+class Processor: NSObject {
+}
+
+extension Reactive where Base: Processor {
+    var target: BindingTarget<Int> {
+        return self.makeBindingTarget { (base, value) in
+        }
+    }
+}
+
+let signalObserver = Signal<Int, Never>.Observer (
+    value: { value in
+        print("Time elapsed = \(value)")
+},
+    completed: { print("completed") },
+    interrupted: { print("interrupted") }
+)

@@ -1,5 +1,5 @@
-import Result
 import Foundation
+import Dispatch
 
 extension Signal {
 	/// Represents a signal event.
@@ -139,6 +139,8 @@ extension Signal.Event where Value: Equatable, Error: Equatable {
 	}
 }
 
+extension Signal.Event: Equatable where Value: Equatable, Error: Equatable {}
+
 extension Signal.Event: CustomStringConvertible {
 	public var description: String {
 		switch self {
@@ -161,7 +163,7 @@ extension Signal.Event: CustomStringConvertible {
 public protocol EventProtocol {
 	/// The value type of an event.
 	associatedtype Value
-	/// The error type of an event. If errors aren't possible then `NoError` can
+	/// The error type of an event. If errors aren't possible then `Never` can
 	/// be used.
 	associatedtype Error: Swift.Error
 	/// Extracts the event from the receiver.
@@ -289,7 +291,7 @@ extension Signal.Event {
 		}
 	}
 
-	internal static var materialize: Transformation<Signal<Value, Error>.Event, NoError> {
+	internal static var materialize: Transformation<Signal<Value, Error>.Event, Never> {
 		return { action, _ in
 			return { event in
 				action(.value(event))
@@ -303,6 +305,27 @@ extension Signal.Event {
 
 				case .value:
 					break
+				}
+			}
+		}
+	}
+
+	internal static var materializeResults: Transformation<Result<Value, Error>, Never> {
+		return { action, _ in
+			return { event in
+				switch event {
+				case .value(let value):
+					action(.value(Result(success: value)))
+
+				case .failed(let error):
+					action(.value(Result(failure: error)))
+					action(.completed)
+
+				case .completed:
+					action(.completed)
+
+				case .interrupted:
+					action(.interrupted)
 				}
 			}
 		}
@@ -337,17 +360,17 @@ extension Signal.Event {
 	}
 }
 
-extension Signal.Event where Error == AnyError {
-	internal static func attempt(_ action: @escaping (Value) throws -> Void) -> Transformation<Value, AnyError> {
+extension Signal.Event where Error == Swift.Error {
+	internal static func attempt(_ action: @escaping (Value) throws -> Void) -> Transformation<Value, Error> {
 		return attemptMap { value in
 			try action(value)
 			return value
 		}
 	}
 
-	internal static func attemptMap<U>(_ transform: @escaping (Value) throws -> U) -> Transformation<U, AnyError> {
+	internal static func attemptMap<U>(_ transform: @escaping (Value) throws -> U) -> Transformation<U, Error> {
 		return attemptMap { value in
-			ReactiveSwift.materialize { try transform(value) }
+			Result { try transform(value) }
 		}
 	}
 }
@@ -453,7 +476,7 @@ extension Signal.Event {
 	}
 }
 
-extension Signal.Event where Value: EventProtocol {
+extension Signal.Event where Value: EventProtocol, Error == Never {
 	internal static var dematerialize: Transformation<Value.Value, Value.Error> {
 		return { action, _ in
 			return { event in
@@ -462,7 +485,34 @@ extension Signal.Event where Value: EventProtocol {
 					action(innerEvent.event)
 
 				case .failed:
-					fatalError("NoError is impossible to construct")
+					fatalError("Never is impossible to construct")
+
+				case .completed:
+					action(.completed)
+
+				case .interrupted:
+					action(.interrupted)
+				}
+			}
+		}
+	}
+}
+
+extension Signal.Event where Value: ResultProtocol, Error == Never {
+	internal static var dematerializeResults: Transformation<Value.Success, Value.Failure> {
+		return { action, _ in
+			return { event in
+				let event = event.map { $0.result }
+
+				switch event {
+				case .value(.success(let value)):
+					action(.value(value))
+
+				case .value(.failure(let error)):
+					action(.failed(error))
+
+				case .failed:
+					fatalError("Never is impossible to construct")
 
 				case .completed:
 					action(.completed)
@@ -799,34 +849,17 @@ extension Signal.Event {
 					state.pendingValue = value
 
 					let proposedScheduleDate: Date
-					if let previousDate = state.previousDate, previousDate.compare(scheduler.currentDate) != .orderedDescending {
+					if let previousDate = state.previousDate, previousDate <= scheduler.currentDate {
 						proposedScheduleDate = previousDate.addingTimeInterval(interval)
 					} else {
 						proposedScheduleDate = scheduler.currentDate
 					}
 
-					switch proposedScheduleDate.compare(scheduler.currentDate) {
-					case .orderedAscending:
-						return scheduler.currentDate
-
-					case .orderedSame: fallthrough
-					case .orderedDescending:
-						return proposedScheduleDate
-					}
+					return proposedScheduleDate < scheduler.currentDate ? scheduler.currentDate : proposedScheduleDate
 				}
 
 				schedulerDisposable.inner = scheduler.schedule(after: scheduleDate) {
-					let pendingValue: Value? = state.modify { state in
-						defer {
-							if state.pendingValue != nil {
-								state.pendingValue = nil
-								state.previousDate = scheduleDate
-							}
-						}
-						return state.pendingValue
-					}
-
-					if let pendingValue = pendingValue {
+					if let pendingValue = state.modify({ $0.retrieveValue(date: scheduleDate) }) {
 						action(.value(pendingValue))
 					}
 				}
@@ -834,8 +867,10 @@ extension Signal.Event {
 		}
 	}
 
-	internal static func debounce(_ interval: TimeInterval, on scheduler: DateScheduler) -> Transformation<Value, Error> {
+	internal static func debounce(_ interval: TimeInterval, on scheduler: DateScheduler, discardWhenCompleted: Bool) -> Transformation<Value, Error> {
 		precondition(interval >= 0)
+		
+		let state: Atomic<ThrottleState<Value>> = Atomic(ThrottleState(previousDate: scheduler.currentDate, pendingValue: nil))
 
 		return { action, lifetime in
 			let d = SerialDisposable()
@@ -848,12 +883,34 @@ extension Signal.Event {
 			return { event in
 				switch event {
 				case let .value(value):
+					state.modify { state in
+						state.pendingValue = value
+					}
 					let date = scheduler.currentDate.addingTimeInterval(interval)
 					d.inner = scheduler.schedule(after: date) {
-						action(.value(value))
+						if let pendingValue = state.modify({ $0.retrieveValue(date: date) }) {
+							action(.value(pendingValue))
+						}
+					}
+					
+				case .completed:
+					d.inner = scheduler.schedule {
+						let pending: (value: Value, previousDate: Date)? = state.modify { state in
+							defer { state.pendingValue = nil }
+							guard let pendingValue = state.pendingValue, let previousDate = state.previousDate else { return nil }
+							return (pendingValue, previousDate)
+						}
+						if !discardWhenCompleted, let (pendingValue, previousDate) = pending {
+							scheduler.schedule(after: previousDate.addingTimeInterval(interval)) {
+								action(.value(pendingValue))
+								action(.completed)
+							}
+						} else {
+							action(.completed)
+						}
 					}
 
-				case .completed, .failed, .interrupted:
+				case .failed, .interrupted:
 					d.inner = scheduler.schedule {
 						action(event)
 					}
@@ -861,14 +918,81 @@ extension Signal.Event {
 			}
 		}
 	}
+	
+	internal static func collect(every interval: DispatchTimeInterval, on scheduler: DateScheduler, skipEmpty: Bool, discardWhenCompleted: Bool) -> Transformation<[Value], Error> {
+		return { action, lifetime in
+			let state = Atomic<CollectEveryState<Value>>(.init(skipEmpty: skipEmpty))
+			let d = SerialDisposable()
+			
+			d.inner = scheduler.schedule(after: scheduler.currentDate.addingTimeInterval(interval), interval: interval, leeway: interval * 0.1) {
+				let (currentValues, isCompleted) = state.modify { ($0.collect(), $0.isCompleted) }
+				if let currentValues = currentValues {
+					action(.value(currentValues))
+				}
+				if isCompleted {
+					action(.completed)
+				}
+			}
+			
+			lifetime.observeEnded {
+				d.dispose()
+				scheduler.schedule { action(.interrupted) }
+			}
+
+			return { event in
+				switch event {
+				case let .value(value):
+					state.modify { $0.values.append(value) }
+				case let .failed(error):
+					d.inner = scheduler.schedule { action(.failed(error)) }
+				case .completed where !discardWhenCompleted:
+					state.modify { $0.isCompleted = true }
+				case .completed:
+					d.inner = scheduler.schedule { action(.completed) }
+				case .interrupted:
+					d.inner = scheduler.schedule { action(.interrupted) }
+				}
+			}
+		}
+	}
+}
+
+private struct CollectEveryState<Value> {
+	let skipEmpty: Bool
+	var values: [Value] = []
+	var isCompleted: Bool = false
+	
+	init(skipEmpty: Bool) {
+		self.skipEmpty = skipEmpty
+	}
+	
+	var hasValues: Bool {
+		return !values.isEmpty || !skipEmpty
+	}
+	
+	mutating func collect() -> [Value]? {
+		guard hasValues else { return nil }
+		defer { values.removeAll() }
+		return values
+	}
 }
 
 private struct ThrottleState<Value> {
 	var previousDate: Date?
 	var pendingValue: Value?
+	
+	mutating func retrieveValue(date: Date) -> Value? {
+		defer {
+			if pendingValue != nil {
+				pendingValue = nil
+				previousDate = date
+			}
+		}
+		return pendingValue
+	}
 }
 
-extension Signal.Event where Error == NoError {
+extension Signal.Event where Error == Never {
 	internal static func promoteError<F>(_: F.Type) -> Transformation<Value, F> {
 		return { action, _ in
 			return { event in
@@ -876,7 +1000,7 @@ extension Signal.Event where Error == NoError {
 				case let .value(value):
 					action(.value(value))
 				case .failed:
-					fatalError("NoError is impossible to construct")
+					fatalError("Never is impossible to construct")
 				case .completed:
 					action(.completed)
 				case .interrupted:

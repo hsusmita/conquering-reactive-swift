@@ -7,18 +7,20 @@
 //
 
 import UIKit
-import ReactiveCocoa
 import ReactiveSwift
-import Result
+import ReactiveCocoa
 import CoreLocation
 
 class ViewController: UIViewController {
-	let tableView = UITableView()
+    @IBOutlet weak var label: UILabel!
+    let tableView = UITableView()
 	private let manager: CLLocationManager = CLLocationManager()
 	let operationQueue = OperationQueue.main
 
-	override func viewDidLoad() {
+    override func viewDidLoad() {
 		super.viewDidLoad()
+        self.label.layer.borderColor = UIColor.black.cgColor
+        self.label.layer.borderWidth = 1.0
 		let x = Property(value: true)
 		let actionDisposable = AnyDisposable { 
 			print("is disposed")
@@ -41,8 +43,6 @@ class ViewController: UIViewController {
 		operationQueue.addOperation(operation1)
 		operationQueue.addOperation(operation2)
 
-		let queue = DispatchQueue.global(qos: .background)
-		queue.sync(execute: <#T##DispatchWorkItem#>)
 	}
 
 	override func didReceiveMemoryWarning() {
@@ -53,11 +53,11 @@ class ViewController: UIViewController {
 
 //class LocationServiceManager: NSObject {
 //	private let manager: CLLocationManager = CLLocationManager()
-//	let permissionGrantedSignal: Signal<Bool, NoError>
-//	let locationSignal: Signal<CLLocation, NoError>
+//	let permissionGrantedSignal: Signal<Bool, Never>
+//	let locationSignal: Signal<CLLocation, Never>
 //
-//	fileprivate let permissionGrantedPipe = Signal<Bool, NoError>.pipe()
-//	fileprivate let locationPipe = Signal<CLLocation, NoError>.pipe()
+//	fileprivate let permissionGrantedPipe = Signal<Bool, Never>.pipe()
+//	fileprivate let locationPipe = Signal<CLLocation, Never>.pipe()
 //
 //	fileprivate var locationUpdateCompletionBlock: ((CLLocation) -> Void)?
 //
@@ -102,9 +102,9 @@ class LocationServiceManager: NSObject {
 	private let manager: CLLocationManager = CLLocationManager()
 
 	//Create a Pipe
-	fileprivate let (output, input) = Signal<CLLocation, NoError>.pipe()
+	fileprivate let (output, input) = Signal<CLLocation, Never>.pipe()
 
-	let locationSignal: Signal<CLLocation, NoError>
+	let locationSignal: Signal<CLLocation, Never>
 
 	override init() {
 		locationSignal = output //Assign output of Pipe to public signal
@@ -136,5 +136,4 @@ extension LocationServiceManager: CLLocationManagerDelegate {
 		}
 	}
 }
-
 

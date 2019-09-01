@@ -12,14 +12,12 @@
 import UIKit
 import Foundation
 import ReactiveSwift
-import Result
-import ReactiveCocoa
 import XCPlayground
 import PlaygroundSupport
 PlaygroundPage.current.needsIndefiniteExecution = true
 
 //: ### Define a SignalProducer which emits interger after interval seconds
-let signalProducer: SignalProducer<Int, NoError> = SignalProducer { (observer, lifetime) in
+let signalProducer: SignalProducer<Int, Never> = SignalProducer { (observer, lifetime) in
 	let now = DispatchTime.now()
 	for index in 0..<10 {
 		let timeElapsed = index * 5

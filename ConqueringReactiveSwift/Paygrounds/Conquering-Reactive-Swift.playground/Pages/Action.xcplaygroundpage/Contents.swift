@@ -12,15 +12,13 @@
 import UIKit
 import Foundation
 import ReactiveSwift
-import Result
-import ReactiveCocoa
 import XCPlayground
 import PlaygroundSupport
 PlaygroundPage.current.needsIndefiniteExecution = true
 
 func generateSignalProducer() {
-	let signalProducerGenerator: (Int) -> SignalProducer<Int, NoError>  = { timeInterval in
-		return SignalProducer<Int, NoError> { (observer, lifetime) in
+	let signalProducerGenerator: (Int) -> SignalProducer<Int, Never>  = { timeInterval in
+		return SignalProducer<Int, Never> { (observer, lifetime) in
 			let now = DispatchTime.now()
 			for index in 0..<10 {
 				let timeElapsed = index * timeInterval
@@ -52,8 +50,8 @@ func generateSignalProducer() {
 
 func basicAction() {
 	//: ### Returns a SignalProducer which emits interger after interval seconds
-	let signalProducerGenerator: (Int) -> SignalProducer<Int, NoError>  = { timeInterval in
-		return SignalProducer<Int, NoError> { (observer, lifetime) in
+	let signalProducerGenerator: (Int) -> SignalProducer<Int, Never>  = { timeInterval in
+		return SignalProducer<Int, Never> { (observer, lifetime) in
 			let now = DispatchTime.now()
 			for index in 0..<10 {
 				let timeElapsed = index * timeInterval
@@ -72,7 +70,7 @@ func basicAction() {
 	}
 
 	//: ### Define an action with a closure
-	let action = Action<(Int), Int, NoError>(execute: signalProducerGenerator)
+	let action = Action<(Int), Int, Never>(execute: signalProducerGenerator)
 
 	//: ### Observe values received
 	action.values.observeValues { value in
@@ -93,8 +91,8 @@ func basicAction() {
 	}
 }
 
-func textSignalGenerator(text: String) -> Signal<String, NoError> {
-    return Signal<String, NoError> { (observer, _) in
+func textSignalGenerator(text: String) -> Signal<String, Never> {
+    return Signal<String, Never> { (observer, _) in
         let now = DispatchTime.now()
         for index in 0..<text.count {
             DispatchQueue.main.asyncAfter(deadline: now + 1.0 * Double(index)) {
@@ -108,8 +106,8 @@ func textSignalGenerator(text: String) -> Signal<String, NoError> {
     }
 }
 
-func lengthCheckerSignalProducer(text: String, minimumLength: Int) ->  SignalProducer<Bool, NoError> {
-    return SignalProducer<Bool, NoError> { (observer, _) in
+func lengthCheckerSignalProducer(text: String, minimumLength: Int) ->  SignalProducer<Bool, Never> {
+    return SignalProducer<Bool, Never> { (observer, _) in
         observer.send(value: (text.count > minimumLength))
         observer.sendCompleted()
     }
@@ -120,7 +118,7 @@ func actionWithState() {
 	let titleSignal = textSignalGenerator(text: title)
 	let titleProperty = Property(initial: "", then: titleSignal)
     
-    let titleLengthChecker = Action<Int, Bool, NoError>(
+    let titleLengthChecker = Action<Int, Bool, Never>(
         state: titleProperty, 
         execute: lengthCheckerSignalProducer)
 
@@ -140,7 +138,7 @@ func conditionallyEnabledAction() {
     let titleSignal = textSignalGenerator(text: title)
     let titleProperty = Property(initial: "", then: titleSignal)
     
-    let titleLengthChecker = Action<Int, Bool, NoError>(
+    let titleLengthChecker = Action<Int, Bool, Never>(
         state: titleProperty, 
         enabledIf: { $0.count > 5 },
         execute: lengthCheckerSignalProducer
@@ -157,8 +155,8 @@ func conditionallyEnabledAction() {
     }
 }
 /*//: ### Returns a SignalProducer which emits interger after interval seconds
-	func getSignalProducer(value: Int) -> SignalProducer<Int, NoError> {
-		return SignalProducer<Int, NoError> { (observer, lifetime) in
+	func getSignalProducer(value: Int) -> SignalProducer<Int, Never> {
+		return SignalProducer<Int, Never> { (observer, lifetime) in
 			for i in 0..<10 {
 				DispatchQueue.main.asyncAfter(deadline: .now() + Double(value *  i)) {
 					guard !lifetime.hasEnded else {
@@ -175,7 +173,7 @@ func conditionallyEnabledAction() {
 	}
 
 //: ### Define an action with a closure
-	let action = Action<(Int), Int, NoError>(execute: getSignalProducer)
+	let action = Action<(Int), Int, Never>(execute: getSignalProducer)
 
 //: ### Observe values received
 	action.values.observeValues { value in

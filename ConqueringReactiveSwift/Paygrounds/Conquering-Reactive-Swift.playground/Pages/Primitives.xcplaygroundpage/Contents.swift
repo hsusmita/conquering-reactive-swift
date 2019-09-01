@@ -26,7 +26,7 @@ class SimulatorViewController: UIViewController {
 		super.viewDidLoad()
 		configure()
 		// Defining consumer
-		let observer: Signal<Bool, NoError>.Observer = Signal<Bool, NoError>.Observer(value: { value in
+		let observer: Signal<Bool, Never>.Observer = Signal<Bool, Never>.Observer(value: { value in
 			self.button.isEnabled = value
 		})
 

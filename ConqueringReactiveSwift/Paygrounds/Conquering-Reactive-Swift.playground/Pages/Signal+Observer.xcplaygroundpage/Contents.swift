@@ -10,13 +10,12 @@
 */
 import UIKit
 import ReactiveSwift
-import Result
 import ReactiveCocoa
 import XCPlayground
 import PlaygroundSupport
 
 //: ### Create an observer
-var signalObserver = Signal<Int, NoError>.Observer (value: { value in
+var signalObserver = Signal<Int, Never>.Observer (value: { value in
 	print("Time elapsed = \(value)")
 }, completed: {
 	print("completed")
@@ -26,7 +25,7 @@ var signalObserver = Signal<Int, NoError>.Observer (value: { value in
 
 //: ### Create a signal
 
-let signal = Signal<Int, NoError> { observer, lifetime in
+let signal = Signal<Int, Never> { observer, lifetime in
 	let now = DispatchTime.now()
 	for index in (0..<10) {
 		let timeElapsed = index * 5
@@ -45,7 +44,7 @@ let signal = Signal<Int, NoError> { observer, lifetime in
 	}
 }
 
-let (output, input) = Signal<Int, NoError>.pipe()
+let (output, input) = Signal<Int, Never>.pipe()
 
 let now = DispatchTime.now()
 for index in (0..<10) {
@@ -68,7 +67,7 @@ let disposable = signal.observe(signalObserver)
 
 //: ### Stop observation
 
-DispatchQueue.main.asyncAfter(deadline: .now() + 2 * 5.0) {
-	disposable?.dispose()
-}
+//DispatchQueue.main.asyncAfter(deadline: .now() + 2 * 5.0) {
+//    disposable?.dispose()
+//}
 PlaygroundPage.current.needsIndefiniteExecution = true
